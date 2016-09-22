@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">FlowerPower</string>
+
+    <string name="plant_health_heading">Plant Health: </string>
+
+    <string name="take_picture">Take Picture</string>
+    <string name="use_default">Use Default</string>
+    <string name="analyze_health">Analyze Health</string>
+</resources>
