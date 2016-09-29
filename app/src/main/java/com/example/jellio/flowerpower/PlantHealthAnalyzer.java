@@ -51,6 +51,9 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
             case "jump":
                 generatedBitmap = generateThresholdHeatMapJumpSearch();
                 break;
+            case "bfs":
+                generatedBitmap = generateThresholdHeatMapBFS();
+                break;
             default:
                 generatedBitmap = null;
         }
@@ -73,6 +76,61 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
     /****
      * Heat Map Methods
      ****/
+
+    private Bitmap generateThresholdHeatMapBFS() {
+        Bitmap copy = image.copy(image.getConfig(), true);
+
+        checkNeighboringPixels(copy.getWidth() / 2, copy.getHeight() / 2, copy);
+
+        return copy;
+    }
+
+    private void checkNeighboringPixels(int x, int y, Bitmap copy) {
+        // The current pixel is "within the threshold"
+        // Now we need to check all neighboring pixels that surround this guy
+        copy.setPixel(x, y, Color.RED);
+
+        // Top Left
+        if (x - 1 > 0 && y + 1 < copy.getHeight() &&
+                copy.getPixel(x - 1, y + 1) != Color.RED && withinThreshold(copy.getPixel(x - 1, y + 1))) {
+            checkNeighboringPixels(x - 1, y + 1, copy);
+        }
+        // Top Middle
+        if (y + 1 < copy.getHeight() &&
+                copy.getPixel(x, y + 1) != Color.RED && withinThreshold(copy.getPixel(x, y + 1))) {
+            checkNeighboringPixels(x, y + 1, copy);
+        }
+        // Top Right
+        if (x + 1 < copy.getWidth() && y + 1 < copy.getHeight() &&
+                copy.getPixel(x + 1, y + 1) != Color.RED && withinThreshold(copy.getPixel(x + 1, y + 1))) {
+            checkNeighboringPixels(x + 1, y + 1, copy);
+        }
+        // Middle Left
+        if (x - 1 > 0 &&
+                copy.getPixel(x - 1, y) != Color.RED && withinThreshold(copy.getPixel(x - 1, y))) {
+            checkNeighboringPixels(x - 1, y, copy);
+        }
+        // Middle Right
+        if (x + 1 < copy.getWidth() &&
+                copy.getPixel(x + 1, y) != Color.RED && withinThreshold(copy.getPixel(x + 1, y))) {
+            checkNeighboringPixels(x + 1, y, copy);
+        }
+        // Bottom Left
+        if (x - 1 > 0 && y - 1 > 0 &&
+                copy.getPixel(x - 1, y - 1) != Color.RED && withinThreshold(copy.getPixel(x - 1, y - 1))) {
+            checkNeighboringPixels(x - 1, y - 1, copy);
+        }
+        // Bottom Middle
+        if (y - 1 > 0 &&
+                copy.getPixel(x, y - 1) != Color.RED && withinThreshold(copy.getPixel(x, y - 1))) {
+            checkNeighboringPixels(x, y - 1, copy);
+        }
+        // Bottom Right
+        if (x + 1 < copy.getWidth() && y - 1 > 0 &&
+                copy.getPixel(x + 1, y - 1) != Color.RED && withinThreshold(copy.getPixel(x + 1, y - 1))) {
+            checkNeighboringPixels(x + 1, y - 1, copy);
+        }
+    }
 
     /**
      * Generates a heap map of ChN-readable pixels using Jump method.
@@ -99,7 +157,7 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
 
                 // Keep looking at pixels until we find a plant, or we go out of bounds.
                 // If we go out of bounds, go to the next row.
-                while (!withinThreshold(Color.red(pixel), Color.green(pixel), Color.blue(pixel))) {
+                while (!withinThreshold(pixel)) {
                     x += skipAmount;
                     if (x >= image.getWidth()) continue outerLoop;
                     pixel = image.getPixel(x, y);
@@ -108,7 +166,7 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
                 // Now that we found a plant, hold this point so we can come back to it later.
                 xPlantFound = x;
                 // Keep going right until we can no longer
-                while (withinThreshold(Color.red(pixel), Color.green(pixel), Color.blue(pixel))) {
+                while (withinThreshold(pixel)) {
                     ChN += Color.green(pixel) - (Color.red(pixel) * 7f / 10f) - (Color.blue(pixel) / 2);
                     numPixels++;
                     copy.setPixel(x, y, Color.rgb(255, 0, 0));
@@ -122,7 +180,7 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
 
                 // Now return to that reference point from earlier and go left
                 x = xPlantFound;
-                while (withinThreshold(Color.red(pixel), Color.green(pixel), Color.blue(pixel))) {
+                while (withinThreshold(pixel)) {
                     ChN += Color.green(pixel) - (Color.red(pixel) * 7f / 10f) - (Color.blue(pixel) / 2);
                     numPixels++;
                     copy.setPixel(x, y, Color.rgb(255, 0, 0));
@@ -157,10 +215,7 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
             for (int j = 0; j < copy.getHeight(); j++) {
 
                 int pixel = copy.getPixel(i, j);
-                int red = Color.red(pixel);
-                int green = Color.green(pixel);
-                int blue = Color.blue(pixel);
-                if (withinThreshold(red, green, blue)) {
+                if (withinThreshold(pixel)) {
                     copy.setPixel(i, j, Color.rgb(255, 0, 0));
                 }
 
@@ -176,12 +231,11 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
 
     /**
      * Determines if the given RGB values are within a given threshold for Brown->Green.
-     * @param r Red int[0, 255]
-     * @param g Green int[0, 255]
-     * @param b Blue int[0, 255]
+     * @param pixel Integer representation of RGB value
      * @return true if RGB is within threshold, false otherwise.
      */
-    private boolean withinThreshold(int r, int g, int b) {
+    private boolean withinThreshold(int pixel) {
+        int r = Color.red(pixel), g = Color.green(pixel), b = Color.blue(pixel);
         double[][] colors = {
                 {238.0, 238.0, 0.0},
                 {205.0, 205.0, 0.0},
