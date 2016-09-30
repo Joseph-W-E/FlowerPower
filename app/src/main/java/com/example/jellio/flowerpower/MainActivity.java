@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
                 PlantHealthAnalyzer pha = new PlantHealthAnalyzer(bitmap, prvwImage, txtPlantHealthiness);
 
                 // Run the background process.
-                pha.execute("jump");
+                pha.execute("bfs");
 
                 // Other
                 //prvwImage.setImageBitmap(pha.generateThresholdHeatMapJumpSearch());

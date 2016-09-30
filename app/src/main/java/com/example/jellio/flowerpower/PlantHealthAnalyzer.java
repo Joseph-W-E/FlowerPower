@@ -6,7 +6,10 @@ import android.os.AsyncTask;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Created by Joseph Elliott on 9/16/16.
@@ -52,7 +55,7 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
                 generatedBitmap = generateThresholdHeatMapJumpSearch();
                 break;
             case "bfs":
-                generatedBitmap = generateThresholdHeatMapBFS();
+                generatedBitmap = generateThresholdHeatMapBreadthFirstSearch();
                 break;
             default:
                 generatedBitmap = null;
@@ -77,59 +80,73 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
      * Heat Map Methods
      ****/
 
-    private Bitmap generateThresholdHeatMapBFS() {
+    private Bitmap generateThresholdHeatMapBreadthFirstSearch() {
         Bitmap copy = image.copy(image.getConfig(), true);
+        // Start in the middle of the image
+        int x = copy.getWidth() / 2, y = copy.getHeight() / 2;
 
-        checkNeighboringPixels(copy.getWidth() / 2, copy.getHeight() / 2, copy);
+        Queue<Pixel> queue = new LinkedList<Pixel>();
+        queue.add(new Pixel(copy.getPixel(x, y), x, y));
+        copy.setPixel(x, y, Color.RED);
+        while (!queue.isEmpty()) {
+            Pixel pixel = queue.remove();
+            for (Pixel neighbor : neighboringPixels(pixel, copy)) {
+                copy.setPixel(neighbor.getX(), neighbor.getY(), Color.RED);
+                queue.add(neighbor);
+            }
+        }
 
         return copy;
     }
 
-    private void checkNeighboringPixels(int x, int y, Bitmap copy) {
-        // The current pixel is "within the threshold"
-        // Now we need to check all neighboring pixels that surround this guy
-        copy.setPixel(x, y, Color.RED);
+    private ArrayList<Pixel> neighboringPixels(Pixel pixel, Bitmap copy) {
+        ArrayList<Pixel> list = new ArrayList<>();
+
+        int x = pixel.getX();
+        int y = pixel.getY();
 
         // Top Left
         if (x - 1 > 0 && y + 1 < copy.getHeight() &&
                 copy.getPixel(x - 1, y + 1) != Color.RED && withinThreshold(copy.getPixel(x - 1, y + 1))) {
-            checkNeighboringPixels(x - 1, y + 1, copy);
+            list.add(new Pixel(copy.getPixel(x - 1, y + 1), x - 1, y + 1));
         }
         // Top Middle
         if (y + 1 < copy.getHeight() &&
                 copy.getPixel(x, y + 1) != Color.RED && withinThreshold(copy.getPixel(x, y + 1))) {
-            checkNeighboringPixels(x, y + 1, copy);
+            list.add(new Pixel(copy.getPixel(x, y + 1), x, y + 1));
         }
         // Top Right
         if (x + 1 < copy.getWidth() && y + 1 < copy.getHeight() &&
                 copy.getPixel(x + 1, y + 1) != Color.RED && withinThreshold(copy.getPixel(x + 1, y + 1))) {
-            checkNeighboringPixels(x + 1, y + 1, copy);
+            list.add(new Pixel(copy.getPixel(x + 1, y + 1), x + 1, y + 1));
         }
         // Middle Left
         if (x - 1 > 0 &&
                 copy.getPixel(x - 1, y) != Color.RED && withinThreshold(copy.getPixel(x - 1, y))) {
-            checkNeighboringPixels(x - 1, y, copy);
+            list.add(new Pixel(copy.getPixel(x - 1, y), x - 1, y));
         }
         // Middle Right
         if (x + 1 < copy.getWidth() &&
                 copy.getPixel(x + 1, y) != Color.RED && withinThreshold(copy.getPixel(x + 1, y))) {
-            checkNeighboringPixels(x + 1, y, copy);
+            list.add(new Pixel(copy.getPixel(x + 1, y), x + 1, y));
         }
         // Bottom Left
         if (x - 1 > 0 && y - 1 > 0 &&
                 copy.getPixel(x - 1, y - 1) != Color.RED && withinThreshold(copy.getPixel(x - 1, y - 1))) {
-            checkNeighboringPixels(x - 1, y - 1, copy);
+            list.add(new Pixel(copy.getPixel(x - 1, y - 1), x - 1, y - 1));
         }
         // Bottom Middle
         if (y - 1 > 0 &&
                 copy.getPixel(x, y - 1) != Color.RED && withinThreshold(copy.getPixel(x, y - 1))) {
-            checkNeighboringPixels(x, y - 1, copy);
+            list.add(new Pixel(copy.getPixel(x, y - 1), x, y - 1));
         }
         // Bottom Right
         if (x + 1 < copy.getWidth() && y - 1 > 0 &&
                 copy.getPixel(x + 1, y - 1) != Color.RED && withinThreshold(copy.getPixel(x + 1, y - 1))) {
-            checkNeighboringPixels(x + 1, y - 1, copy);
+            list.add(new Pixel(copy.getPixel(x + 1, y - 1), x + 1, y - 1));
         }
+
+        return list;
     }
 
     /**
