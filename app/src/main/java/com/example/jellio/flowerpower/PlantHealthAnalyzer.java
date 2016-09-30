@@ -78,6 +78,11 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
      * Heat Map Methods
      ****/
 
+    /**
+     * Generates a heat-map of plant-detected pixels.
+     * This does not modify the original image.
+     * @return A copy of the original image with an overlaying heat-map.
+     */
     private Bitmap generateThresholdHeatMapBreadthFirstSearch() {
         /*** How we will calculate the healthiness ***/
         long ChN = 0L, numPixels = 0L;
@@ -110,6 +115,15 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
         return copy;
     }
 
+    /**
+     * Gathers a list of valid neighboring pixels.
+     * A pixel is considered "valid" if:
+     * * The pixel is not out of bounds.
+     * * The pixel is not a part of the heat-map.
+     * @param pixel The center pixel.
+     * @param copy The bitmap in which "pixel" resides.
+     * @return A list of Pixel objects.
+     */
     private ArrayList<Pixel> neighboringPixels(Pixel pixel, Bitmap copy) {
         ArrayList<Pixel> list = new ArrayList<>();
 
@@ -172,38 +186,17 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
     private boolean withinThreshold(int pixel) {
         int r = Color.red(pixel), g = Color.green(pixel), b = Color.blue(pixel);
         double[][] colors = {
-                {238.0, 238.0, 0.0},
-                {205.0, 205.0, 0.0},
-                {152.0, 251.0, 152.0},
-                {154.0, 255.0, 154.0},
-                {144.0, 238.0, 144.0},
-                {124.0, 205.0, 124.0},
-                {84.0, 139.0, 84.0},
-                {50.0, 205.0, 50.0},
-                {34.0, 139.0, 34.0},
-                {0.0, 255.0, 0.0},
-                {0.0, 238.0, 0.0},
-                {0.0, 205.0, 0.0},
-                {0.0, 139.0, 0.0},
-                {0.0, 128.0, 0.0},
-                {0.0, 100.0, 0.0},
-                {48.0, 128.0, 20.0},
-                {124.0, 252.0, 0.0},
-                {127.0, 255.0, 0.0},
-                {118.0, 238.0, 0.0},
-                {102.0, 205.0, 0.0},
-                {69.0, 139.0, 0.0},
-                {173.0, 255.0, 47.0},
-                {202.0, 255.0, 112.0},
-                {188.0, 238.0, 104.0},
-                {162.0, 205.0, 90.0},
-                {110.0, 139.0, 61.0},
-                {85.0, 107.0, 47.0},
-                {107.0, 142.0, 35.0},
-                {192.0, 255.0, 62.0},
-                {179.0, 238.0, 58.0},
-                {154.0, 205.0, 50.0},
-                {105.0, 139.0, 34.0}
+                {238.0, 238.0, 0.0},   {205.0, 205.0, 0.0},   {152.0, 251.0, 152.0},
+                {154.0, 255.0, 154.0}, {144.0, 238.0, 144.0}, {124.0, 205.0, 124.0},
+                {84.0, 139.0, 84.0},   {50.0, 205.0, 50.0},   {34.0, 139.0, 34.0},
+                {0.0, 255.0, 0.0},     {0.0, 238.0, 0.0},     {0.0, 205.0, 0.0},
+                {0.0, 139.0, 0.0},     {0.0, 128.0, 0.0},     {0.0, 100.0, 0.0},
+                {48.0, 128.0, 20.0},   {124.0, 252.0, 0.0},   {127.0, 255.0, 0.0},
+                {118.0, 238.0, 0.0},   {102.0, 205.0, 0.0},   {69.0, 139.0, 0.0},
+                {173.0, 255.0, 47.0},  {202.0, 255.0, 112.0}, {188.0, 238.0, 104.0},
+                {162.0, 205.0, 90.0},  {110.0, 139.0, 61.0},  {85.0, 107.0, 47.0},
+                {107.0, 142.0, 35.0},  {192.0, 255.0, 62.0},  {179.0, 238.0, 58.0},
+                {154.0, 205.0, 50.0},  {105.0, 139.0, 34.0}
         };
 
         int tallyFor = 0, tallyAgainst = 0;
@@ -244,7 +237,6 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
      * @return A string representation of a two-decimal-place double.
      */
     private String roundDoubleToTwoDecimalPlaces(double val) {
-        // Rounds the double to 2 decimal places.
         return String.format("%1$,.2f", val);
     }
 }
