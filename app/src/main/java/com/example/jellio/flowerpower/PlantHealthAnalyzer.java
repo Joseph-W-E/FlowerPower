@@ -7,7 +7,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -27,11 +26,17 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
     /****
      * Constructors
      ***/
-    public PlantHealthAnalyzer(Bitmap image, ImageView imgDestination, TextView txtDestination) {
+    public PlantHealthAnalyzer(Bitmap image) {
         this.image = image;
-        this.imgDestination = imgDestination;
-        this.txtDestination = txtDestination;
         this.health = 0.0;
+    }
+
+    public void setImageDestination(ImageView imageDestination) {
+        this.imgDestination = imageDestination;
+    }
+
+    public void setTextViewDestination(TextView textViewDestination) {
+        this.txtDestination = textViewDestination;
     }
 
     /****
@@ -47,19 +52,7 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
     protected Bitmap doInBackground(String... params) {
         Bitmap generatedBitmap;
 
-        switch(params[0]) {
-            case "quadratic":
-                generatedBitmap = generateThresholdHeatMapQuadratic();
-                break;
-            case "jump":
-                generatedBitmap = generateThresholdHeatMapJumpSearch();
-                break;
-            case "bfs":
-                generatedBitmap = generateThresholdHeatMapBreadthFirstSearch();
-                break;
-            default:
-                generatedBitmap = null;
-        }
+        generatedBitmap = generateThresholdHeatMapBreadthFirstSearch();
 
         return generatedBitmap;
     }
@@ -72,8 +65,13 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
     @Override
     protected void onPostExecute(Bitmap result) {
         super.onPostExecute(result);
-        imgDestination.setImageBitmap(result);
-        txtDestination.setText(txtDestination.getText().toString() + " " + generateHealthValue(health));
+        if (imgDestination != null) {
+            imgDestination.setImageBitmap(result);
+        }
+        if (txtDestination != null) {
+            txtDestination.setText(txtDestination.getText().toString() +
+                    " " + roundDoubleToTwoDecimalPlaces(health));
+        }
     }
 
     /****
@@ -81,20 +79,33 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
      ****/
 
     private Bitmap generateThresholdHeatMapBreadthFirstSearch() {
+        /*** How we will calculate the healthiness ***/
+        long ChN = 0L, numPixels = 0L;
+        /*** The new bitmap we are turning into the heatmap ***/
         Bitmap copy = image.copy(image.getConfig(), true);
-        // Start in the middle of the image
-        int x = copy.getWidth() / 2, y = copy.getHeight() / 2;
+        /*** Establish the starting position ***/
+        int xInitial = copy.getWidth() / 2, yInitial = copy.getHeight() / 2;
+        Pixel pixelInitial = new Pixel(copy.getPixel(xInitial, yInitial), xInitial, yInitial);
 
-        Queue<Pixel> queue = new LinkedList<Pixel>();
-        queue.add(new Pixel(copy.getPixel(x, y), x, y));
-        copy.setPixel(x, y, Color.RED);
+        /*** The start of the BFS algorithm ***/
+        Queue<Pixel> queue = new LinkedList<>();
+        queue.add(pixelInitial);
+
+        ChN += getChNFromPixel(pixelInitial);
+        numPixels++;
+        copy.setPixel(xInitial, yInitial, Color.RED);
+
         while (!queue.isEmpty()) {
             Pixel pixel = queue.remove();
             for (Pixel neighbor : neighboringPixels(pixel, copy)) {
+                ChN += getChNFromPixel(neighbor);
+                numPixels++;
                 copy.setPixel(neighbor.getX(), neighbor.getY(), Color.RED);
                 queue.add(neighbor);
             }
         }
+
+        health = ChN / numPixels;
 
         return copy;
     }
@@ -147,99 +158,6 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
         }
 
         return list;
-    }
-
-    /**
-     * Generates a heap map of ChN-readable pixels using Jump method.
-     *
-     * @return A heat map in bitmap form.
-     */
-    private Bitmap generateThresholdHeatMapJumpSearch() {
-        long ChN = 0L, numPixels = 0L;
-
-        Bitmap copy = image.copy(image.getConfig(), true);
-        int skipAmount = (int) Math.round((double) copy.getWidth() * 0.05);
-
-        int xPlantFound, xEndOfPlantSegment;
-
-        // Scan row by row
-        outerLoop:
-        for (int y = 0; y < image.getHeight(); y++) {
-            int x = 0;
-
-            // While we haven't run out of pixels in this row
-            while (x < image.getWidth()) {
-                // Get the first pixel.
-                int pixel = image.getPixel(x, y);
-
-                // Keep looking at pixels until we find a plant, or we go out of bounds.
-                // If we go out of bounds, go to the next row.
-                while (!withinThreshold(pixel)) {
-                    x += skipAmount;
-                    if (x >= image.getWidth()) continue outerLoop;
-                    pixel = image.getPixel(x, y);
-                }
-
-                // Now that we found a plant, hold this point so we can come back to it later.
-                xPlantFound = x;
-                // Keep going right until we can no longer
-                while (withinThreshold(pixel)) {
-                    ChN += Color.green(pixel) - (Color.red(pixel) * 7f / 10f) - (Color.blue(pixel) / 2);
-                    numPixels++;
-                    copy.setPixel(x, y, Color.rgb(255, 0, 0));
-                    x++;
-                    if (x >= image.getWidth()) continue outerLoop;
-                    pixel = image.getPixel(x, y);
-                }
-
-                // We can't go right any further, hold this point so we can come back to it later
-                xEndOfPlantSegment = x;
-
-                // Now return to that reference point from earlier and go left
-                x = xPlantFound;
-                while (withinThreshold(pixel)) {
-                    ChN += Color.green(pixel) - (Color.red(pixel) * 7f / 10f) - (Color.blue(pixel) / 2);
-                    numPixels++;
-                    copy.setPixel(x, y, Color.rgb(255, 0, 0));
-                    x--;
-                    if (x < 0) continue outerLoop;
-                    pixel = image.getPixel(x, y);
-                }
-
-                // We've scanned all of the plant segment, so now go back to the end of this segment.
-                x = xEndOfPlantSegment;
-
-                // Look for more plant segments.
-            }
-
-        }
-
-        health = numPixels != 0.0 ? (double) ChN / (double) numPixels : 0.0;
-
-        return copy;
-    }
-
-    /**
-     * Generates a heap map of ChN-readable pixels using Quadratic method.
-     *
-     * @return A heat map in bitmap form.
-     */
-    private Bitmap generateThresholdHeatMapQuadratic() {
-        Bitmap copy = image.copy(image.getConfig(), true);
-
-        // Quadratic runtime. This is veeeery slow, and this needs to be optimized.
-        for (int i = 0; i < copy.getWidth(); i++) {
-            for (int j = 0; j < copy.getHeight(); j++) {
-
-                int pixel = copy.getPixel(i, j);
-                if (withinThreshold(pixel)) {
-                    copy.setPixel(i, j, Color.rgb(255, 0, 0));
-                }
-
-            }
-        }
-
-        return copy;
     }
 
     /****
@@ -307,7 +225,26 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
         return tallyFor > tallyAgainst - 5;
     }
 
-    private String generateHealthValue(double val) {
+    /**
+     * The formula for generating the Chlorophyll-Nitrogen content of a pixel.
+     * Source: http://www.ipcbee.com/vol57/010-ICSEA2013-B1014.pdf
+     * @param pixel The pixel to be evaluated.
+     * @return The ChN value generated from the formula.
+     */
+    private long getChNFromPixel(Pixel pixel) {
+        long ChN = Color.green(pixel.getRgb())
+                - Color.red(pixel.getRgb()) / 2
+                - Color.blue(pixel.getRgb()) / 2;
+        return ChN;
+    }
+
+    /**
+     * Formats the double to two decimal places.
+     * @param val The double to be formatted.
+     * @return A string representation of a two-decimal-place double.
+     */
+    private String roundDoubleToTwoDecimalPlaces(double val) {
+        // Rounds the double to 2 decimal places.
         return String.format("%1$,.2f", val);
     }
 }

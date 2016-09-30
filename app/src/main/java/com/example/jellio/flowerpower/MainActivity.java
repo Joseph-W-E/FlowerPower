@@ -90,14 +90,12 @@ public class MainActivity extends AppCompatActivity {
                 bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth() / 5, bitmap.getHeight() / 5, false);
 
                 // Create a new instance of the Plant Health Analyzer
-                PlantHealthAnalyzer pha = new PlantHealthAnalyzer(bitmap, prvwImage, txtPlantHealthiness);
+                PlantHealthAnalyzer pha = new PlantHealthAnalyzer(bitmap);
+                pha.setImageDestination(prvwImage);
+                pha.setTextViewDestination(txtPlantHealthiness);
 
                 // Run the background process.
-                pha.execute("bfs");
-
-                // Other
-                //prvwImage.setImageBitmap(pha.generateThresholdHeatMapJumpSearch());
-                //txtPlantHealthiness.setText(txtPlantHealthiness.getText().toString() + " " + pha.analyzeHealth());
+                pha.execute();
             }
         });
     }
