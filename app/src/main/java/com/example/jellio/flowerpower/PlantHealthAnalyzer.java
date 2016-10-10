@@ -21,6 +21,7 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
     private Bitmap image;
     private ImageView imgDestination;
     private TextView txtDestination;
+    private TextView txtToggle;
     private double health;
 
     /****
@@ -37,6 +38,10 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
 
     public void setTextViewDestination(TextView textViewDestination) {
         this.txtDestination = textViewDestination;
+    }
+
+    public void setTextViewToggle(TextView textViewToggle) {
+        this.txtToggle = textViewToggle;
     }
 
     /****
@@ -71,6 +76,9 @@ public class PlantHealthAnalyzer extends AsyncTask<String, Bitmap, Bitmap> {
         if (txtDestination != null) {
             txtDestination.setText(txtDestination.getText().toString() +
                     " " + roundDoubleToTwoDecimalPlaces(health));
+        }
+        if (txtToggle != null) {
+            txtToggle.setText(R.string.btn_analyze_hint);
         }
     }
 

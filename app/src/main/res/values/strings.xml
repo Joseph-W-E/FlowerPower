@@ -6,4 +6,7 @@
     <string name="take_picture">Take Picture</string>
     <string name="use_default">Use Default</string>
     <string name="analyze_health">Analyze Health</string>
+
+    <string name="btn_analyze_hint">Snap A Photo, and then hit Analyze Health!</string>
+    <string name="btn_analyze_running">Analyzing - Please wait...</string>
 </resources>

@@ -24,6 +24,16 @@
         android:layout_height="0dp"
         android:layout_weight="1"/>
 
+    <TextView
+        android:id="@+id/txt_analyzing"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:gravity="center"
+        android:textSize="16sp"
+        android:textColor="@color/primary_light"
+        android:text="@string/btn_analyze_hint"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

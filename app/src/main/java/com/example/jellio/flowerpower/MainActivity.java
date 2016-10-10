@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private TextView txtPlantHealthiness;
+    private TextView txtAnalyzing;
     private ImageView prvwImage;
     private Button btnTakePicture;
     private Button btnUseDefault;
@@ -57,9 +58,10 @@ public class MainActivity extends AppCompatActivity {
 
         /*** Initialize views ***/
         txtPlantHealthiness = (TextView) findViewById(R.id.txt_plant_healthiness);
+        txtAnalyzing        = (TextView) findViewById(R.id.txt_analyzing);
         prvwImage = (ImageView) findViewById(R.id.prvwImage);
-        btnTakePicture = (Button) findViewById(R.id.btn_take_picture);
-        btnUseDefault = (Button) findViewById(R.id.btn_use_default);
+        btnTakePicture    = (Button) findViewById(R.id.btn_take_picture);
+        btnUseDefault     = (Button) findViewById(R.id.btn_use_default);
         btnAnalyzePicture = (Button) findViewById(R.id.btn_analyze_picture);
 
         /*** Set Button onClickListeners ***/
@@ -93,9 +95,11 @@ public class MainActivity extends AppCompatActivity {
                 PlantHealthAnalyzer pha = new PlantHealthAnalyzer(bitmap);
                 pha.setImageDestination(prvwImage);
                 pha.setTextViewDestination(txtPlantHealthiness);
+                pha.setTextViewToggle(txtAnalyzing);
 
                 // Run the background process.
                 pha.execute();
+                txtAnalyzing.setText(R.string.btn_analyze_running);
             }
         });
     }
