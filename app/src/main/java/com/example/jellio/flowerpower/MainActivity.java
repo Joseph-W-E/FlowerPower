@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
                 Bitmap bitmap = ((BitmapDrawable) prvwImage.getDrawable()).getBitmap();
 
                 // (Optional) Scale down the image.
-                bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth() / 5, bitmap.getHeight() / 5, false);
+                bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth() / 10, bitmap.getHeight() / 10, false);
 
                 // Create a new instance of the Plant Health Analyzer
                 PlantHealthAnalyzer pha = new PlantHealthAnalyzer(bitmap);
